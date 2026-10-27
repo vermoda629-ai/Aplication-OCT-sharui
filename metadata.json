@@ -1,0 +1,6 @@
+{
+  "name": "SHARUI Business Intelligence",
+  "description": "Sistema Integral de Gestión de Negocios - Inventario, Ventas, Clientes, Informes Financieros, Libros Diarios y Facturación",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

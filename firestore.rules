@@ -1,0 +1,113 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Master Deny-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Validations ---
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['id', 'code', 'name', 'ownerId']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.code is string && data.code.size() <= 64 &&
+             data.name is string && data.name.size() <= 128 &&
+             data.ownerId == request.auth.uid;
+    }
+
+    function isValidSale(data) {
+      return data.keys().hasAll(['id', 'date', 'status', 'productCode', 'ownerId']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.status in ['Compra', 'Reserva'] &&
+             data.price is number && data.price >= 0 &&
+             data.ownerId == request.auth.uid;
+    }
+
+    function isValidLog(data) {
+      return data.keys().hasAll(['id', 'date', 'amount', 'ownerId']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.amount is number &&
+             data.ownerId == request.auth.uid;
+    }
+
+    function isValidInvoice(data) {
+      return data.keys().hasAll(['id', 'invoiceNumber', 'date', 'clientName', 'total', 'ownerId']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.invoiceNumber is string && data.invoiceNumber.size() <= 64 &&
+             data.total is number && data.total >= 0 &&
+             data.ownerId == request.auth.uid;
+    }
+
+    // --- Collection Matches ---
+
+    match /products/{productId} {
+      allow get: if isOwner(existing().ownerId);
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(productId) && isValidProduct(incoming()) && incoming().createdAt is number;
+      allow update: if isOwner(existing().ownerId) && isValidProduct(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'image', 'code', 'category', 'name', 'sizes', 'description', 'createdAt',
+          'brand', 'origin', 'totalCost', 'packageType', 'unitsCount', 'unitCost',
+          'suggestedSalePrice', 'salePrice', 'costPrice', 'variants'
+        ])
+      );
+      allow delete: if isOwner(existing().ownerId);
+    }
+
+    match /sales/{saleId} {
+      allow get: if isOwner(existing().ownerId);
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(saleId) && isValidSale(incoming()) && incoming().createdAt is number;
+      allow update: if isOwner(existing().ownerId) && isValidSale(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'date', 'time', 'dateTimeString', 'status', 'productCode', 'subCode', 'fullCode',
+          'selectedSize', 'price', 'paymentMethod', 'clientName', 'whatsapp', 'city',
+          'logistics', 'discount', 'invoiceId', 'notes', 'createdAt'
+        ])
+      );
+      allow delete: if isOwner(existing().ownerId);
+    }
+
+    match /accounting/{logId} {
+      allow get: if isOwner(existing().ownerId);
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(logId) && isValidLog(incoming()) && incoming().createdAt is number;
+      allow update: if isOwner(existing().ownerId) && isValidLog(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['date', 'amount', 'concept', 'category', 'isLocked', 'createdAt'])
+      );
+      allow delete: if isOwner(existing().ownerId);
+    }
+
+    match /invoices/{invoiceId} {
+      allow get: if isOwner(existing().ownerId);
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(invoiceId) && isValidInvoice(incoming()) && incoming().createdAt is number;
+      allow update: if isOwner(existing().ownerId) && isValidInvoice(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['invoiceNumber', 'date', 'saleId', 'clientName', 'clientTaxId', 'clientPhone', 'clientCity', 'items', 'subtotal', 'discount', 'tax', 'total', 'status', 'paymentMethod', 'notes', 'createdAt'])
+      );
+      allow delete: if isOwner(existing().ownerId);
+    }
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Inventory product details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "image": { "type": "string" },
+        "code": { "type": "string" },
+        "category": { "type": "string" },
+        "name": { "type": "string" },
+        "sizes": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "description": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["id", "code", "name", "ownerId"]
+    },
+    "DailyLogEntry": {
+      "title": "Daily Log Entry",
+      "description": "Accounting log entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "amount": { "type": "number" },
+        "concept": { "type": "string" },
+        "category": { "type": "string" },
+        "isLocked": { "type": "boolean" },
+        "createdAt": { "type": "number" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["id", "date", "amount", "ownerId"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "Sales transaction record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "status": { "type": "string", "enum": ["Compra", "Reserva"] },
+        "productCode": { "type": "string" },
+        "selectedSize": { "type": "string" },
+        "price": { "type": "number" },
+        "clientName": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "city": { "type": "string" },
+        "logistics": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["id", "date", "status", "productCode", "ownerId"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Commercial sale invoice / receipt",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "date": { "type": "string" },
+        "saleId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientTaxId": { "type": "string" },
+        "clientPhone": { "type": "string" },
+        "clientCity": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "discount": { "type": "number" },
+        "tax": { "type": "number" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["Emitida", "Pagada", "Anulada"] },
+        "paymentMethod": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["id", "invoiceNumber", "date", "clientName", "total", "ownerId"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Store products in inventory"
+    },
+    "/accounting/{logId}": {
+      "schema": "DailyLogEntry",
+      "description": "Store accounting entries"
+    },
+    "/sales/{saleId}": {
+      "schema": "Sale",
+      "description": "Store sales records"
+    },
+    "/invoices/{invoiceId}": {
+      "schema": "Invoice",
+      "description": "Store commercial invoices and receipts"
+    }
+  }
+}
